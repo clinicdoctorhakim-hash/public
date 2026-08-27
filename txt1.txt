@@ -1,18 +1,76 @@
-เข้าใจแล้วครับ ผมออกแบบเป็น **3 ชั้นป้องกัน (defense in depth)** ตามที่ขอ — ต้นน้ำสร้างเลยตอนเพิ่ม, กลางน้ำคอยตรวจซ้ำเป็นระยะ, ปลายน้ำเช็คทุกครั้งที่มีการเขียนไฟล์จริง ไม่ว่าทางไหนจะพลาดมาก็ไม่มีวันมี HN_UID ว่างหลงเหลือ
+if this.caption = 'ãÊèÃÒÂª×èÍãËÁè'
+this.caption = '¡´»ØèÁ¹Õé   àÁ×èÍà¾ÔèÁàÊÃç¨áÅéÇ'
+thisform.label6.caption = 'ÃÒÂ¡ÒÃãÊèÃÒÂª×èÍãËÁè'
+thisform.command1.enabled= .t.
+this.parent.command3.caption = 'Â¡àÅÔ¡¡ÒÃãÊèÃÒÂª×èÍãËÁè'
+go bott
+thisform.text6.value=recno('pat4')
+scat memo memvar 
+store m.disease to thisform.text1.value
+stor '' to thisform.text2.value
+ store str(m.age,7,3) to thisform.text2.value
+ store 0 to thisform.text3.value
+ store 0 to thisform.text4.value
+store m.sex to sexx
+this.parent.txtdate.Enabled = .t.
+this.parent.text6.Enabled = .f.
+this.parent.text1.Enabled = .T.
+thisform.txtdate.setfocus
+thisform.text6.refresh
+this.parent.txtname.Enabled = .t.
+this.parent.text2.Enabled = .t.
+this.parent.text2.inputmask = '999.999'
+this.parent.text3.Enabled = .t.
+this.parent.text4.Enabled = .t.
+this.parent.txtaddress.Enabled = .t.
+this.parent.txtnumber.Enabled = .t.
+		         this.parent.id_card.Enabled = .T.
+this.parent.txtsurname.Enabled = .t.
+this.parent.optiongroup1.Enabled = .t.
+this.parent.command2.Enabled = .F.
+this.parent.command4.Enabled = .F.
+this.parent.command5.Enabled = .F.
+this.parent.command9.Enabled = .F.
+this.parent.command6.Enabled = .f.
+		             this.parent.command8.Enabled = .f.
+this.parent.command7.Enabled = .f.
+else
+ this.caption = '¡´»ØèÁ¹Õé   àÁ×èÍà¾ÔèÁàÊÃç¨áÅéÇ' 
+ store thisform.text1.value  to m.disease
+INSERT INTO pat4 FROM MEMVAR
+repl pat4.sex with sexx
+replace pat4.date2 with thisform.txtdate.value
+replace pat4.age with val(thisform.text2.value)+(thisform.text3.value/12)+(thisform.text4.value/365)
+store 0 to thisform.text3.value,thisform.text4.value
+this.caption = 'ãÊèÃÒÂª×èÍãËÁè'
+this.parent.command3.caption = 'Â¡àÅÔ¡'
+this.parent.command2.Enabled = .T.
+thisform.text6.refresh
+this.parent.command3.Enabled = .T.
+this.parent.command4.Enabled = .T.
+this.parent.command6.Enabled = .T.
+this.parent.command7.Enabled = .T.
+this.parent.command5.Enabled = .t.
+		             this.parent.command8.Enabled = .t.
+this.parent.command9.Enabled = .t.
+this.setfocus
+this.parent.txtdate.Enabled = .f.
+this.parent.txtname.Enabled = .f.
+this.parent.txtaddress.Enabled = .f.
+this.parent.text2.Enabled = .f.
+this.parent.text3.Enabled = .f.
+this.parent.text4.Enabled = .f.
+this.parent.text1.Enabled = .F.
+this.parent.txtnumber.Enabled = .f.
+		         this.parent.id_card.Enabled = .f.
+this.parent.txtsurname.Enabled = .f.
+thisform.text6.refresh
+this.parent.optiongroup1.Enabled = .f.
+this.parent.text6.Enabled = .t.
+thisform.text6.refresh
+endif
+thisform.refresh
 
-ขอดูโครงสร้างท้ายไฟล์ `zk_server.py` ก่อนว่า thread `watcher()` เริ่มทำงานตรงไหน จะได้แทรกจุดเรียกให้ถูกที่:Ok เจอจุดที่ต้องแก้แล้ว — ที่ `main()` บรรทัด 1793 กับใน `watcher()` เลย ขอลงมือแก้ทั้ง 3 ชั้นให้เลยครับ
 
-**ชั้นปลายน้ำก่อน (`dbfwrite.py`)** — เพิ่ม logic ให้ตอน "edit" แถวไหนก็ตาม ถ้าพบว่า HN_UID ยังว่างอยู่ (ไม่ว่าจะมาจากสาเหตุอะไร) ให้เติมให้ทันทีก่อนเขียนจริง:ตอนนี้แก้ branch `"edit"` ให้เช็คและเติม HN_UID ให้เองถ้าแถวนั้นว่างอยู่ ไม่ว่าจะแก้ไขด้วยเหตุผลอะไรก็ตาม:ดีครับ ปลายน้ำเสร็จแล้ว ต่อไป **กลางน้ำ (`zk_server.py`)** — เพิ่มฟังก์ชันคอยตรวจสอบและเติมอัตโนมัติทุกครั้งที่โหลดทะเบียนใหม่ (ทั้งตอน server เริ่ม และทุกรอบ 60 วินาทีของ `watcher()`):ตอนนี้เพิ่มการเรียกครั้งแรกตอน server เริ่มทำงานด้วย (ไม่ต้องรอ 60 วินาที):สุดท้าย **ต้นน้ำ** — สร้างไฟล์ FoxPro เล็กๆ ที่มีฟังก์ชันสร้าง HN_UID ให้แถวเดียว (ใช้ logic เดียวกับ `add_hnuid.prg` เพื่อความเข้ากันได้) พร้อมคำแนะนำวิธีเรียกใช้ตอนเพิ่มคนไข้ใหม่:ตรวจ syntax ผ่านทั้งคู่ครับ นำเสนอไฟล์ให้เลย:สรุปสิ่งที่แก้ให้ 3 ชั้นครับ:
 
-**1) ต้นน้ำ — `gen_hnuid.prg` (ไฟล์ใหม่)**
-ฟังก์ชัน FoxPro ที่สร้าง HN_UID ให้แถวเดียว ใช้เรียกทันทีหลัง `APPEND BLANK` ในโปรแกรมหลัก (c5) — ต้องหาจุดเพิ่มคนไข้ในโปรแกรมหลักแล้วแทรกเอง เพราะยังไม่มีไฟล์นั้นให้ดู (คำแนะนำการติดตั้งอยู่ในคอมเมนต์ต้นไฟล์)
 
-**2) กลางน้ำ — `zk_server.py` (แก้ไข)**
-เพิ่มฟังก์ชัน `heal_missing_hnuid()` ที่จะสแกนหาแถวที่ยังไม่มี HN_UID ทุกครั้งที่โหลดทะเบียน (ตอน server เริ่ม + ทุกรอบ `watcher()` ที่รันซ้ำทุก 60 วิ) ถ้าเจอจะเขียนกลับลง `pat4.dbf` ให้อัตโนมัติทันที — ครอบคลุมกรณีที่ต้นน้ำพลาดหรือยังไม่ได้แก้โปรแกรมหลัก
-
-**3) ปลายน้ำ — `dbfwrite.py` (แก้ไข)**
-เพิ่ม `make_hn_uid_f()` (prefix `_F` แยกจาก `_P` ที่ python สร้างเอง) และเพิ่ม `unpack_value()` ให้ branch "edit" เช็คทุกครั้งที่มีการแก้ไขแถวใดๆ ว่า HN_UID ว่างอยู่ไหม ถ้าว่างก็เติมให้ก่อนเขียนจริง — เป็นด่านสุดท้ายที่การเขียนไฟล์ทุกเส้นทางต้องผ่าน
-
-ผลคือ: ไม่ว่า record จะถูกเพิ่มทางไหน (FoxPro ตรง / เว็บ zk_server) และไม่ว่าต้นน้ำจะลืมแก้หรือพลาดยังไง สุดท้ายจะไม่มี HN_UID ว่างหลงเหลือเกิน 1 รอบของ `watcher()` (สูงสุด ~60 วินาที) แน่นอนครับ
-
-ยังขาดแค่โค้ดจริงของฟอร์ม/โปรแกรมที่เพิ่มคนไข้ใน c5 — ถ้าส่งมาให้ดู จะแทรก `gen_hnuid()` ให้ตรงจุดเป๊ะๆ เลยครับ
